@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(.venv/Scripts/pip install:*)",
+      "Bash(winget install:*)",
+      "Bash(export:*)"
+    ]
+  }
+}
