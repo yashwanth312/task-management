@@ -21,10 +21,37 @@ export function CreateTaskPage() {
   };
 
   return (
-    <div className="max-w-xl">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">New Task</h1>
-      <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <TaskForm employees={employees} onSubmit={handleSubmit} submitLabel="Create Task" />
+    <div className="max-w-xl animate-fade-slide">
+      <div className="mb-8">
+        <h1
+          className="text-2xl font-mono font-semibold tracking-tight"
+          style={{ color: "var(--text-primary)" }}
+        >
+          New Task
+        </h1>
+        <p
+          className="text-xs mt-1"
+          style={{ color: "var(--text-muted)" }}
+        >
+          Create and assign a new task to your team.
+        </p>
+      </div>
+
+      <div
+        className="rounded-sm overflow-hidden"
+        style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+      >
+        <div
+          className="h-px"
+          style={{ background: "linear-gradient(to right, var(--accent), transparent)" }}
+        />
+        <div className="p-6">
+          <TaskForm
+            employees={employees}
+            onSubmit={handleSubmit}
+            submitLabel="Create Task →"
+          />
+        </div>
       </div>
     </div>
   );

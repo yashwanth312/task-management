@@ -4,11 +4,16 @@ import { Sidebar } from "./Sidebar";
 
 export function AppLayout() {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
       <Sidebar />
       <Navbar />
-      <main className="ml-64 pt-16 p-6">
-        <Outlet />
+      <main
+        className="ml-60 pt-14"
+        style={{ minHeight: "100vh" }}
+      >
+        <div className="p-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

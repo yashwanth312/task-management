@@ -1,21 +1,49 @@
 import { ReactNode } from "react";
 
 const variants = {
-  pending: "bg-yellow-100 text-yellow-800",
-  in_progress: "bg-blue-100 text-blue-800",
-  completed: "bg-green-100 text-green-800",
-  low: "bg-gray-100 text-gray-700",
-  medium: "bg-orange-100 text-orange-700",
-  high: "bg-red-100 text-red-700",
-  admin: "bg-purple-100 text-purple-700",
-  employee: "bg-gray-100 text-gray-700",
+  pending:
+    "bg-amber-500/10 text-amber-400 border border-amber-500/25",
+  in_progress:
+    "bg-teal-500/10 text-teal-400 border border-teal-500/25",
+  completed:
+    "bg-emerald-500/10 text-emerald-400 border border-emerald-500/25",
+  low:
+    "bg-white/5 text-[var(--text-muted)] border border-white/8",
+  medium:
+    "bg-amber-500/8 text-amber-500/80 border border-amber-500/20",
+  high:
+    "bg-red-500/10 text-red-400 border border-red-500/25",
+  admin:
+    "bg-violet-500/10 text-violet-400 border border-violet-500/25",
+  employee:
+    "bg-white/5 text-[var(--text-secondary)] border border-white/8",
+};
+
+const dots: Record<string, string> = {
+  pending: "bg-amber-400",
+  in_progress: "bg-teal-400",
+  completed: "bg-emerald-400",
+  low: "bg-gray-500",
+  medium: "bg-amber-500",
+  high: "bg-red-400",
+  admin: "bg-violet-400",
+  employee: "bg-gray-500",
 };
 
 type BadgeVariant = keyof typeof variants;
 
-export function Badge({ variant, children }: { variant: BadgeVariant; children: ReactNode }) {
+export function Badge({
+  variant,
+  children,
+}: {
+  variant: BadgeVariant;
+  children: ReactNode;
+}) {
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[variant]}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-[10px] font-mono font-medium uppercase tracking-wider ${variants[variant]}`}
+    >
+      <span className={`status-dot ${dots[variant]}`} />
       {children}
     </span>
   );

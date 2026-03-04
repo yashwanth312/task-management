@@ -18,16 +18,33 @@ export function AddComment({ onAdd, isAdding }: AddCommentProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-2"
+      style={{ borderTop: "1px solid var(--border)", paddingTop: "12px" }}
+    >
       <textarea
         ref={ref}
         rows={2}
-        placeholder="Write a comment…"
-        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        placeholder="Add a comment…"
+        className="block w-full rounded-sm border px-3 py-2.5 text-sm resize-none transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-amber-500/20"
+        style={{
+          background: "var(--surface-2)",
+          border: "1px solid var(--border)",
+          color: "var(--text-primary)",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = "rgba(245,158,11,0.6)";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = "var(--border)";
+        }}
       />
-      <Button type="submit" size="sm" disabled={isAdding}>
-        {isAdding ? "…" : "Add"}
-      </Button>
+      <div className="flex justify-end">
+        <Button type="submit" size="sm" disabled={isAdding}>
+          {isAdding ? "Posting…" : "Post Comment"}
+        </Button>
+      </div>
     </form>
   );
 }

@@ -22,8 +22,30 @@ export function TaskDetailPage() {
   const createComment = useCreateComment(id!);
   const deleteComment = useDeleteComment(id!);
 
-  if (isLoading) return <p className="text-gray-500">Loading…</p>;
-  if (!task) return <p className="text-red-600">Task not found.</p>;
+  if (isLoading) {
+    return (
+      <div className="max-w-3xl space-y-4">
+        <div className="h-10 w-2/3 rounded-sm shimmer" />
+        <div className="h-48 rounded-sm shimmer" />
+        <div className="h-32 rounded-sm shimmer" />
+      </div>
+    );
+  }
+
+  if (!task) {
+    return (
+      <div
+        className="flex items-center gap-3 p-4 rounded-sm text-sm font-mono"
+        style={{
+          background: "rgba(239,68,68,0.08)",
+          border: "1px solid rgba(239,68,68,0.2)",
+          color: "#f87171",
+        }}
+      >
+        <span>⚠</span> Task not found.
+      </div>
+    );
+  }
 
   const canUpdateStatus = user?.role === "admin" || task.assigned_to === user?.id;
 
@@ -32,59 +54,158 @@ export function TaskDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Delete this task?")) return;
+    if (!confirm("Delete this task? This action cannot be undone.")) return;
     await deleteTask.mutateAsync(task.id);
     navigate("/tasks");
   };
 
-  return (
-    <div className="max-w-3xl space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <Badge variant={task.status}>{task.status.replace("_", " ")}</Badge>
-            <Badge variant={task.priority}>{task.priority}</Badge>
-          </div>
-        </div>
-        {user?.role === "admin" && (
-          <div className="flex gap-2 shrink-0">
-            <Link to={`/tasks/${task.id}/edit`}>
-              <Button variant="secondary" size="sm">Edit</Button>
-            </Link>
-            <Button variant="danger" size="sm" onClick={handleDelete} disabled={deleteTask.isPending}>
-              Delete
-            </Button>
-          </div>
-        )}
-      </div>
+  const isOverdue =
+    task.due_date &&
+    task.status !== "completed" &&
+    new Date(task.due_date) < new Date();
 
-      <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-        {task.description && <p className="text-gray-700 whitespace-pre-wrap">{task.description}</p>}
-        <dl className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <dt className="font-medium text-gray-500">Assigned to</dt>
-            <dd className="text-gray-900">{task.assignee?.full_name ?? "Unassigned"}</dd>
+  return (
+    <div className="max-w-3xl space-y-5 animate-fade-slide">
+      {/* Back nav */}
+      <Link
+        to="/tasks"
+        className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest transition-colors"
+        style={{ color: "var(--text-muted)" }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; }}
+      >
+        ← Back to Tasks
+      </Link>
+
+      {/* Task header card */}
+      <div
+        className="rounded-sm overflow-hidden"
+        style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+      >
+        {/* Top accent */}
+        <div
+          className="h-px"
+          style={{
+            background:
+              task.priority === "high"
+                ? "#ef4444"
+                : task.priority === "medium"
+                ? "#f59e0b"
+                : "var(--border-hover)",
+          }}
+        />
+
+        <div className="p-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-2 min-w-0">
+              <h1
+                className="text-xl font-mono font-semibold leading-snug"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {task.title}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={task.status}>{task.status.replace("_", " ")}</Badge>
+                <Badge variant={task.priority}>{task.priority}</Badge>
+                {isOverdue && (
+                  <span
+                    className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-sm"
+                    style={{
+                      background: "rgba(239,68,68,0.1)",
+                      color: "#f87171",
+                      border: "1px solid rgba(239,68,68,0.25)",
+                    }}
+                  >
+                    Overdue
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {user?.role === "admin" && (
+              <div className="flex gap-2 flex-shrink-0">
+                <Link to={`/tasks/${task.id}/edit`}>
+                  <Button variant="secondary" size="sm">Edit</Button>
+                </Link>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={deleteTask.isPending}
+                >
+                  Delete
+                </Button>
+              </div>
+            )}
           </div>
-          <div>
-            <dt className="font-medium text-gray-500">Created by</dt>
-            <dd className="text-gray-900">{task.creator?.full_name ?? "—"}</dd>
-          </div>
-          <div>
-            <dt className="font-medium text-gray-500">Due date</dt>
-            <dd className="text-gray-900">
-              {task.due_date ? format(new Date(task.due_date), "MMM d, yyyy") : "—"}
-            </dd>
-          </div>
-          <div>
-            <dt className="font-medium text-gray-500">Updated</dt>
-            <dd className="text-gray-900">{format(new Date(task.updated_at), "MMM d, yyyy HH:mm")}</dd>
-          </div>
-        </dl>
+
+          {task.description && (
+            <p
+              className="text-sm leading-relaxed whitespace-pre-wrap"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {task.description}
+            </p>
+          )}
+        </div>
+
+        {/* Meta grid */}
+        <div
+          className="grid grid-cols-2 gap-0"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
+          {[
+            { label: "Assigned to", value: task.assignee?.full_name ?? "Unassigned" },
+            { label: "Created by", value: task.creator?.full_name ?? "—" },
+            {
+              label: "Due date",
+              value: task.due_date
+                ? format(new Date(task.due_date), "MMM d, yyyy")
+                : "—",
+              highlight: isOverdue,
+            },
+            {
+              label: "Last updated",
+              value: format(new Date(task.updated_at), "MMM d, yyyy HH:mm"),
+            },
+          ].map((item, i) => (
+            <div
+              key={item.label}
+              className="px-6 py-4"
+              style={{
+                borderBottom: i < 2 ? "1px solid var(--border)" : undefined,
+                borderRight: i % 2 === 0 ? "1px solid var(--border)" : undefined,
+              }}
+            >
+              <dt
+                className="text-[9px] font-mono uppercase tracking-widest mb-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {item.label}
+              </dt>
+              <dd
+                className="text-sm font-medium"
+                style={{ color: item.highlight ? "#f87171" : "var(--text-primary)" }}
+              >
+                {item.value}
+              </dd>
+            </div>
+          ))}
+        </div>
+
+        {/* Status update */}
         {canUpdateStatus && (
-          <div className="pt-2 border-t border-gray-100">
+          <div
+            className="px-6 py-4 flex items-center gap-4"
+            style={{ borderTop: "1px solid var(--border)" }}
+          >
+            <span
+              className="text-[9px] font-mono uppercase tracking-widest flex-shrink-0"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Update Status
+            </span>
             <Select
-              label="Update Status"
               value={task.status}
               onChange={(e) => handleStatusChange(e.target.value)}
               disabled={updateStatus.isPending}
@@ -98,17 +219,39 @@ export function TaskDetailPage() {
         )}
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-        <h2 className="font-semibold text-gray-900">Comments</h2>
-        <CommentList
-          comments={comments}
-          onDelete={(cid) => deleteComment.mutate(cid)}
-          isDeleting={deleteComment.isPending}
-        />
-        <AddComment
-          onAdd={(body) => createComment.mutateAsync({ body })}
-          isAdding={createComment.isPending}
-        />
+      {/* Comments section */}
+      <div
+        className="rounded-sm overflow-hidden"
+        style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+      >
+        <div
+          className="px-6 py-4 flex items-center justify-between"
+          style={{ borderBottom: "1px solid var(--border)" }}
+        >
+          <h2
+            className="text-[10px] font-mono uppercase tracking-widest"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Comments
+          </h2>
+          <span
+            className="text-[10px] font-mono"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {comments.length}
+          </span>
+        </div>
+        <div className="p-6 space-y-4">
+          <CommentList
+            comments={comments}
+            onDelete={(cid) => deleteComment.mutate(cid)}
+            isDeleting={deleteComment.isPending}
+          />
+          <AddComment
+            onAdd={async (body) => { await createComment.mutateAsync({ body }); }}
+            isAdding={createComment.isPending}
+          />
+        </div>
       </div>
     </div>
   );

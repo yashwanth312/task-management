@@ -3,6 +3,12 @@ import { format } from "date-fns";
 import { Task } from "@/types/task";
 import { Badge } from "@/components/ui/Badge";
 
+const priorityAccent: Record<string, string> = {
+  high: "#ef4444",
+  medium: "#f59e0b",
+  low: "#4e4e62",
+};
+
 export function TaskCard({ task }: { task: Task }) {
   const statusLabel = task.status.replace("_", " ");
   const isOverdue =
@@ -13,26 +19,71 @@ export function TaskCard({ task }: { task: Task }) {
   return (
     <Link
       to={`/tasks/${task.id}`}
-      className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+      className="block rounded-sm card-hover animate-fade-slide group overflow-hidden"
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+      }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="font-medium text-gray-900 line-clamp-2">{task.title}</h3>
-        <Badge variant={task.status}>{statusLabel}</Badge>
-      </div>
-      {task.description && (
-        <p className="mt-1 text-sm text-gray-500 line-clamp-2">{task.description}</p>
-      )}
-      <div className="mt-3 flex items-center gap-3 flex-wrap">
-        <Badge variant={task.priority}>{task.priority}</Badge>
-        {task.assignee && (
-          <span className="text-xs text-gray-500">Assigned: {task.assignee.full_name}</span>
-        )}
-        {task.due_date && (
-          <span className={`text-xs ${isOverdue ? "text-red-600 font-medium" : "text-gray-500"}`}>
-            Due: {format(new Date(task.due_date), "MMM d, yyyy")}
-            {isOverdue && " (overdue)"}
-          </span>
-        )}
+      {/* Priority left border */}
+      <div className="flex">
+        <div
+          className="w-0.5 flex-shrink-0 transition-opacity duration-150 group-hover:opacity-100 opacity-60"
+          style={{ background: priorityAccent[task.priority] }}
+        />
+
+        <div className="flex-1 p-4 space-y-3 min-w-0">
+          {/* Header row */}
+          <div className="flex items-start justify-between gap-2">
+            <h3
+              className="text-sm font-medium leading-snug line-clamp-2 group-hover:text-[var(--text-primary)] transition-colors"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {task.title}
+            </h3>
+            <div className="flex-shrink-0">
+              <Badge variant={task.status}>{statusLabel}</Badge>
+            </div>
+          </div>
+
+          {/* Description */}
+          {task.description && (
+            <p
+              className="text-xs line-clamp-2 leading-relaxed"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {task.description}
+            </p>
+          )}
+
+          {/* Meta row */}
+          <div
+            className="flex items-center gap-3 flex-wrap pt-1"
+            style={{ borderTop: "1px solid var(--border)" }}
+          >
+            <Badge variant={task.priority}>{task.priority}</Badge>
+
+            {task.assignee && (
+              <span
+                className="text-[10px] font-mono truncate max-w-[120px]"
+                style={{ color: "var(--text-muted)" }}
+                title={task.assignee.full_name}
+              >
+                → {task.assignee.full_name}
+              </span>
+            )}
+
+            {task.due_date && (
+              <span
+                className={`text-[10px] font-mono ml-auto flex-shrink-0 ${isOverdue ? "font-medium" : ""}`}
+                style={{ color: isOverdue ? "#f87171" : "var(--text-muted)" }}
+              >
+                {isOverdue && "⚠ "}
+                {format(new Date(task.due_date), "MMM d")}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
     </Link>
   );
