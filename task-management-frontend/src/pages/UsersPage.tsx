@@ -16,6 +16,7 @@ const schema = z.object({
   email: z.string().email("Invalid email"),
   role: z.enum(["admin", "employee"]),
   password: z.string().min(6, "Min 6 characters"),
+  job_title: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -88,7 +89,7 @@ export function UsersPage() {
           <table className="data-table">
             <thead>
               <tr>
-                {["Name", "Email", "Role", "Status", "Joined", "Actions"].map((h) => (
+                {["Name", "Job Title", "Email", "Role", "Status", "Joined", "Actions"].map((h) => (
                   <th key={h}>{h}</th>
                 ))}
               </tr>
@@ -115,6 +116,11 @@ export function UsersPage() {
                         {u.full_name}
                       </span>
                     </div>
+                  </td>
+                  <td>
+                    <span className="font-mono text-[10px]" style={{ color: "var(--text-muted)" }}>
+                      {u.job_title ?? "—"}
+                    </span>
                   </td>
                   <td>
                     <span className="font-mono text-[11px]">{u.email}</span>
@@ -181,6 +187,11 @@ export function UsersPage() {
             <option value="employee">Employee</option>
             <option value="admin">Admin</option>
           </Select>
+          <Input
+            label="Job Title (optional)"
+            placeholder="e.g. Software Engineer"
+            {...register("job_title")}
+          />
           <Input
             label="Password"
             type="password"

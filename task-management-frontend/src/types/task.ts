@@ -10,6 +10,7 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   due_date: string | null;
+  task_batch_id: string | null;
   created_by: string;
   assigned_to: string | null;
   created_at: string;
@@ -24,6 +25,14 @@ export interface TaskCreate {
   priority: TaskPriority;
   due_date?: string;
   assigned_to?: string;
+  group_id?: string;
+}
+
+export interface TaskBatchMemberStatus {
+  task_id: string;
+  assignee: User | null;
+  status: TaskStatus;
+  updated_at: string;
 }
 
 export interface TaskUpdate {

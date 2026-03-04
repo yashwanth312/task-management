@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listTasks, getTask, createTask, updateTask, updateTaskStatus, deleteTask } from "@/api/tasks";
+import { listTasks, getTask, createTask, updateTask, updateTaskStatus, deleteTask, getTaskBatch } from "@/api/tasks";
 import { TaskCreate, TaskUpdate, TaskStatusUpdate } from "@/types/task";
 
 export const TASKS_KEY = ["tasks"] as const;
@@ -47,5 +47,13 @@ export function useDeleteTask() {
   return useMutation({
     mutationFn: (id: string) => deleteTask(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: TASKS_KEY }),
+  });
+}
+
+export function useTaskBatch(batchId: string | null) {
+  return useQuery({
+    queryKey: ["tasks", "batch", batchId],
+    queryFn: () => getTaskBatch(batchId!),
+    enabled: !!batchId,
   });
 }

@@ -1,23 +1,39 @@
 import { useNavigate } from "react-router-dom";
 import { useCreateTask } from "@/hooks/useTasks";
 import { useUsers } from "@/hooks/useUsers";
+import { useGroups } from "@/hooks/useGroups";
+import { useAuth } from "@/context/AuthContext";
 import { TaskForm, TaskFormValues } from "@/components/tasks/TaskForm";
 
 export function CreateTaskPage() {
   const navigate = useNavigate();
   const createTask = useCreateTask();
+  const { user } = useAuth();
   const { data: users = [] } = useUsers();
+  const { data: groups = [] } = useGroups(user?.role === "admin");
   const employees = users.filter((u) => u.role === "employee" && u.is_active);
 
   const handleSubmit = async (data: TaskFormValues) => {
-    const task = await createTask.mutateAsync({
+    const payload: Parameters<typeof createTask.mutateAsync>[0] = {
       title: data.title,
       description: data.description,
       priority: data.priority,
       due_date: data.due_date || undefined,
-      assigned_to: data.assigned_to || undefined,
-    });
-    navigate(`/tasks/${task.id}`);
+    };
+
+    if (data.assign_mode === "group" && data.group_id) {
+      payload.group_id = data.group_id;
+    } else {
+      payload.assigned_to = data.assigned_to || undefined;
+    }
+
+    const task = await createTask.mutateAsync(payload);
+
+    if (data.assign_mode === "group") {
+      navigate("/tasks");
+    } else {
+      navigate(`/tasks/${task.id}`);
+    }
   };
 
   return (
@@ -48,6 +64,7 @@ export function CreateTaskPage() {
         <div className="p-6">
           <TaskForm
             employees={employees}
+            groups={groups}
             onSubmit={handleSubmit}
             submitLabel="Create Task →"
           />

@@ -37,6 +37,7 @@ async def create_user(
         hashed_password=hash_password(body.password),
         full_name=body.full_name,
         role=body.role,
+        job_title=body.job_title,
     )
     db.add(user)
     await db.commit()

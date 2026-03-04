@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { format } from "date-fns";
-import { useTask, useUpdateTaskStatus, useDeleteTask } from "@/hooks/useTasks";
+import { useTask, useUpdateTaskStatus, useDeleteTask, useTaskBatch } from "@/hooks/useTasks";
 import { useComments, useCreateComment, useDeleteComment } from "@/hooks/useComments";
 import { useAuth } from "@/context/AuthContext";
 import { Badge } from "@/components/ui/Badge";
@@ -21,6 +21,7 @@ export function TaskDetailPage() {
   const deleteTask = useDeleteTask();
   const createComment = useCreateComment(id!);
   const deleteComment = useDeleteComment(id!);
+  const { data: batchMembers = [] } = useTaskBatch(task?.task_batch_id ?? null);
 
   if (isLoading) {
     return (
@@ -218,6 +219,65 @@ export function TaskDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Group batch overview */}
+      {task.task_batch_id && batchMembers.length > 0 && (user?.role === "admin" || batchMembers.some((m) => m.assignee?.id === user?.id)) && (
+        <div
+          className="rounded-sm overflow-hidden animate-fade-slide"
+          style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+        >
+          <div
+            className="px-6 py-4 flex items-center justify-between"
+            style={{ borderBottom: "1px solid var(--border)" }}
+          >
+            <h2
+              className="text-[10px] font-mono uppercase tracking-widest"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Group Overview
+            </h2>
+            <span
+              className="text-[10px] font-mono"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {batchMembers.length} member{batchMembers.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <table className="data-table">
+            <thead>
+              <tr>
+                {["Member", "Job Title", "Status", "Last Updated"].map((h) => (
+                  <th key={h}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {batchMembers.map((m) => (
+                <tr key={m.task_id}>
+                  <td>
+                    <span className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                      {m.assignee?.full_name ?? "—"}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="font-mono text-[10px]" style={{ color: "var(--text-muted)" }}>
+                      {m.assignee?.job_title ?? "—"}
+                    </span>
+                  </td>
+                  <td>
+                    <Badge variant={m.status}>{m.status.replace("_", " ")}</Badge>
+                  </td>
+                  <td>
+                    <span className="font-mono text-[10px]" style={{ color: "var(--text-muted)" }}>
+                      {format(new Date(m.updated_at), "MMM d, HH:mm")}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Comments section */}
       <div

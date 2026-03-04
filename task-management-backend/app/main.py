@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import auth, users, tasks, comments, dashboard
+from app.routers import auth, users, tasks, comments, dashboard, groups
 
 app = FastAPI(title="Task Management API", version="1.0.0")
 
@@ -19,6 +19,7 @@ app.include_router(users.router)
 app.include_router(tasks.router)
 app.include_router(comments.router)
 app.include_router(dashboard.router)
+app.include_router(groups.router)
 
 
 @app.get("/health")

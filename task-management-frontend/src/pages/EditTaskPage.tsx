@@ -71,6 +71,8 @@ export function EditTaskPage() {
           <TaskForm
             defaultValues={task}
             employees={employees}
+            groups={[]}
+            editMode={true}
             onSubmit={handleSubmit}
             submitLabel="Save Changes →"
           />

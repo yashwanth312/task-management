@@ -16,7 +16,7 @@ class TaskBase(BaseModel):
 
 
 class TaskCreate(TaskBase):
-    pass
+    group_id: uuid.UUID | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -35,10 +35,20 @@ class TaskStatusUpdate(BaseModel):
 class TaskResponse(TaskBase):
     id: uuid.UUID
     status: Literal["pending", "in_progress", "completed"]
+    task_batch_id: uuid.UUID | None = None
     created_by: uuid.UUID
     created_at: datetime
     updated_at: datetime
     creator: UserResponse | None = None
     assignee: UserResponse | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class TaskBatchMemberStatus(BaseModel):
+    task_id: uuid.UUID
+    assignee: UserResponse | None = None
+    status: Literal["pending", "in_progress", "completed"]
+    updated_at: datetime
 
     model_config = {"from_attributes": True}

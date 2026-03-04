@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: str
     role: Literal["admin", "employee"] = "employee"
+    job_title: str | None = None
 
 
 class UserCreate(UserBase):
@@ -19,6 +20,7 @@ class UserUpdate(BaseModel):
     full_name: str | None = None
     role: Literal["admin", "employee"] | None = None
     is_active: bool | None = None
+    job_title: str | None = None
 
 
 class UserResponse(UserBase):

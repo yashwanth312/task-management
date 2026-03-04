@@ -1,5 +1,5 @@
 import apiClient from "./client";
-import { Task, TaskCreate, TaskUpdate, TaskStatusUpdate } from "@/types/task";
+import { Task, TaskBatchMemberStatus, TaskCreate, TaskUpdate, TaskStatusUpdate } from "@/types/task";
 
 export const listTasks = async (params?: { status?: string; priority?: string }): Promise<Task[]> => {
   const res = await apiClient.get<Task[]>("/tasks", { params });
@@ -28,4 +28,9 @@ export const updateTaskStatus = async (id: string, data: TaskStatusUpdate): Prom
 
 export const deleteTask = async (id: string): Promise<void> => {
   await apiClient.delete(`/tasks/${id}`);
+};
+
+export const getTaskBatch = async (batchId: string): Promise<TaskBatchMemberStatus[]> => {
+  const res = await apiClient.get<TaskBatchMemberStatus[]>(`/tasks/batch/${batchId}`);
+  return res.data;
 };

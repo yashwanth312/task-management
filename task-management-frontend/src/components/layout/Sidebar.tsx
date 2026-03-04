@@ -26,6 +26,20 @@ const navItems = [
     ),
   },
   {
+    to: "/groups",
+    label: "Groups",
+    adminOnly: true,
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="3.5" cy="5" r="1.5" />
+        <circle cx="10.5" cy="5" r="1.5" />
+        <circle cx="7" cy="3.5" r="1.5" />
+        <path d="M0.5 12c0-1.7 1.3-3 3-3s3 1.3 3 3" strokeLinecap="round" />
+        <path d="M8 12c0-1.7 1.3-3 3-3s3 1.3 3 3" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     to: "/users",
     label: "Users",
     adminOnly: true,

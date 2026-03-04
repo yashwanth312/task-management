@@ -10,6 +10,7 @@ import { CreateTaskPage } from "@/pages/CreateTaskPage";
 import { EditTaskPage } from "@/pages/EditTaskPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { UsersPage } from "@/pages/UsersPage";
+import { GroupsPage } from "@/pages/GroupsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000 } },
@@ -24,13 +25,14 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
+                <Route path="/tasks/new" element={<CreateTaskPage />} />
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/tasks/:id" element={<TaskDetailPage />} />
                 <Route element={<ProtectedRoute adminOnly />}>
-                  <Route path="/tasks/new" element={<CreateTaskPage />} />
                   <Route path="/tasks/:id/edit" element={<EditTaskPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/users" element={<UsersPage />} />
+                  <Route path="/groups" element={<GroupsPage />} />
                 </Route>
               </Route>
             </Route>

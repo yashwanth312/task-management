@@ -9,9 +9,10 @@ from sqlalchemy.orm import selectinload
 from app.config import settings
 from app.database import get_db
 from app.dependencies.auth import get_current_user, require_admin
+from app.models.group import Group
 from app.models.task import Task
 from app.models.user import User
-from app.schemas.task import TaskCreate, TaskResponse, TaskStatusUpdate, TaskUpdate
+from app.schemas.task import TaskBatchMemberStatus, TaskCreate, TaskResponse, TaskStatusUpdate, TaskUpdate
 from app.services.email_service import send_task_assigned_email, send_status_updated_email
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -48,14 +49,100 @@ async def list_tasks(
     return list(result.scalars().all())
 
 
+@router.get("/batch/{batch_id}", response_model=list[TaskBatchMemberStatus])
+async def get_task_batch(
+    batch_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[dict]:
+    result = await db.execute(
+        select(Task).options(*TASK_OPTIONS).where(Task.task_batch_id == batch_id)
+    )
+    tasks = list(result.scalars().all())
+    if not tasks:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Batch not found")
+
+    # Employees can only see batch if they are a member
+    if current_user.role != "admin":
+        member_ids = {t.assigned_to for t in tasks}
+        if current_user.id not in member_ids:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    return [
+        {"task_id": t.id, "assignee": t.assignee, "status": t.status, "updated_at": t.updated_at}
+        for t in tasks
+    ]
+
+
 @router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(
     body: TaskCreate,
     background_tasks: BackgroundTasks,
-    current_user: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Task:
-    # Validate assignee exists
+    # Group fanout
+    if body.group_id:
+        result = await db.execute(
+            select(Group).where(Group.id == body.group_id)
+        )
+        group = result.scalar_one_or_none()
+        if not group:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+
+        active_members = [m for m in group.members if m.is_active]
+        if not active_members:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="No active members in this group",
+            )
+
+        batch_id = uuid.uuid4()
+        first_task: Task | None = None
+        for member in active_members:
+            task = Task(
+                title=body.title,
+                description=body.description,
+                priority=body.priority,
+                due_date=body.due_date,
+                assigned_to=member.id,
+                created_by=current_user.id,
+                task_batch_id=batch_id,
+            )
+            db.add(task)
+            if first_task is None:
+                first_task = task
+
+        await db.commit()
+
+        # Reload and send emails
+        for member in active_members:
+            result2 = await db.execute(
+                select(Task)
+                .options(*TASK_OPTIONS)
+                .where(Task.task_batch_id == batch_id, Task.assigned_to == member.id)
+            )
+            t = result2.scalar_one_or_none()
+            if t:
+                send_task_assigned_email(
+                    background_tasks,
+                    assignee_email=member.email,
+                    assignee_name=member.full_name,
+                    task_title=t.title,
+                    task_id=str(t.id),
+                    frontend_url=settings.FRONTEND_URL,
+                )
+
+        # Return first task
+        result3 = await db.execute(
+            select(Task)
+            .options(*TASK_OPTIONS)
+            .where(Task.task_batch_id == batch_id)
+            .order_by(Task.created_at)
+        )
+        return result3.scalars().first()  # type: ignore[return-value]
+
+    # Individual assignment
     assignee: User | None = None
     if body.assigned_to:
         result = await db.execute(select(User).where(User.id == body.assigned_to))

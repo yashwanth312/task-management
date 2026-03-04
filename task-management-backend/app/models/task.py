@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone, date
 
-from sqlalchemy import String, Text, DateTime, Date, ForeignKey, Enum as SAEnum
+from sqlalchemy import String, Text, DateTime, Date, ForeignKey, Enum as SAEnum, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,6 +28,7 @@ class Task(Base):
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     assigned_to: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    task_batch_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
