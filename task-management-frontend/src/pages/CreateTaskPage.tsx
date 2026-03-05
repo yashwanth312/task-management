@@ -65,6 +65,7 @@ export function CreateTaskPage() {
           <TaskForm
             employees={employees}
             groups={groups}
+            creatorJobTitle={user?.job_title ?? null}
             onSubmit={handleSubmit}
             submitLabel="Create Task →"
           />
