@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -102,7 +102,7 @@ export function TaskForm({
   }, [duePreset, setValue]);
 
   // Templates are based on the creator's own job_title
-  const templates = getTemplatesForJobTitle(creatorJobTitle);
+  const templates = useMemo(() => getTemplatesForJobTitle(creatorJobTitle), [creatorJobTitle]);
 
   // Pre-fill title/description when template changes
   useEffect(() => {
@@ -112,7 +112,7 @@ export function TaskForm({
       setValue("title", tpl.title);
       setValue("description", tpl.description);
     }
-  }, [templateId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [templateId, templates, setValue]);
 
   const autoPriority = PRESET_LABELS.find((p) => p.key === duePreset)?.priority;
 
