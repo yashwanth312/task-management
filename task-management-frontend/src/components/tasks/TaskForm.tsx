@@ -31,6 +31,7 @@ interface TaskFormProps {
   employees: User[];
   groups?: Group[];
   editMode?: boolean;
+  creatorJobTitle?: string | null;
   onSubmit: (data: TaskFormValues) => Promise<void>;
   submitLabel?: string;
 }
@@ -59,6 +60,7 @@ export function TaskForm({
   employees,
   groups = [],
   editMode = false,
+  creatorJobTitle = null,
   onSubmit,
   submitLabel = "Save",
 }: TaskFormProps) {
@@ -85,7 +87,6 @@ export function TaskForm({
 
   const duePreset = watch("due_preset");
   const assignMode = watch("assign_mode");
-  const assignedTo = watch("assigned_to");
   const templateId = watch("template_id");
 
   // Auto-set priority and due_date from preset
@@ -100,14 +101,8 @@ export function TaskForm({
     }
   }, [duePreset, setValue]);
 
-  // Find selected employee for template lookup
-  const selectedEmployee = employees.find((e) => e.id === assignedTo) ?? null;
-  const templates = getTemplatesForJobTitle(selectedEmployee?.job_title ?? null);
-
-  // Reset template when assignee changes
-  useEffect(() => {
-    setValue("template_id", "custom");
-  }, [assignedTo, setValue]);
+  // Templates are based on the creator's own job_title
+  const templates = getTemplatesForJobTitle(creatorJobTitle);
 
   // Pre-fill title/description when template changes
   useEffect(() => {
@@ -123,6 +118,49 @@ export function TaskForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {/* Template picker — only shown when creator has matching job_title templates */}
+      {!editMode && templates.length > 0 && (
+        <div className="space-y-2">
+          <label
+            className="block text-[10px] font-mono font-medium uppercase tracking-widest"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Template
+          </label>
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-2.5 cursor-pointer group">
+              <input
+                type="radio"
+                {...register("template_id")}
+                value="custom"
+                className="accent-amber-500"
+              />
+              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                Custom (blank)
+              </span>
+            </label>
+            {templates.map((tpl) => (
+              <label key={tpl.id} className="flex items-start gap-2.5 cursor-pointer group">
+                <input
+                  type="radio"
+                  {...register("template_id")}
+                  value={tpl.id}
+                  className="accent-amber-500 mt-0.5"
+                />
+                <div>
+                  <span className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                    {tpl.label}
+                  </span>
+                  <p className="text-[10px] font-mono mt-0.5" style={{ color: "var(--text-muted)" }}>
+                    {tpl.title}
+                  </p>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Assignment mode toggle — hidden in edit mode */}
       {!editMode && (
         <div className="space-y-2">
@@ -169,49 +207,6 @@ export function TaskForm({
               ))}
             </Select>
           )}
-        </div>
-      )}
-
-      {/* Template picker — only shown for individual assignment with job_title match */}
-      {!editMode && assignMode === "individual" && templates.length > 0 && (
-        <div className="space-y-2">
-          <label
-            className="block text-[10px] font-mono font-medium uppercase tracking-widest"
-            style={{ color: "var(--text-muted)" }}
-          >
-            Template
-          </label>
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-2.5 cursor-pointer group">
-              <input
-                type="radio"
-                {...register("template_id")}
-                value="custom"
-                className="accent-amber-500"
-              />
-              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                Custom (blank)
-              </span>
-            </label>
-            {templates.map((tpl) => (
-              <label key={tpl.id} className="flex items-start gap-2.5 cursor-pointer group">
-                <input
-                  type="radio"
-                  {...register("template_id")}
-                  value={tpl.id}
-                  className="accent-amber-500 mt-0.5"
-                />
-                <div>
-                  <span className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
-                    {tpl.label}
-                  </span>
-                  <p className="text-[10px] font-mono mt-0.5" style={{ color: "var(--text-muted)" }}>
-                    {tpl.title}
-                  </p>
-                </div>
-              </label>
-            ))}
-          </div>
         </div>
       )}
 
