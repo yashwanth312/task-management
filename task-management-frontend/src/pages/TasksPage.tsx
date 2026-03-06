@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTasks } from "@/hooks/useTasks";
-import { useAuth } from "@/context/AuthContext";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskFilters } from "@/components/tasks/TaskFilters";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +20,6 @@ function LoadingSkeleton() {
 }
 
 export function TasksPage() {
-  const { user } = useAuth();
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
 
@@ -34,6 +32,25 @@ export function TasksPage() {
     )
   );
 
+  const today = new Date().toISOString().split("T")[0];
+
+  const stats = tasks
+    ? {
+        total: tasks.length,
+        pending: tasks.filter((t) => t.status === "pending").length,
+        in_progress: tasks.filter((t) => t.status === "in_progress").length,
+        completed: tasks.filter((t) => t.status === "completed").length,
+        overdue: tasks.filter(
+          (t) => t.due_date && t.due_date < today && t.status !== "completed"
+        ).length,
+      }
+    : null;
+
+  const completionPct =
+    stats && stats.total > 0
+      ? Math.round((stats.completed / stats.total) * 100)
+      : 0;
+
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -43,29 +60,83 @@ export function TasksPage() {
             className="text-2xl font-mono font-semibold tracking-tight"
             style={{ color: "var(--text-primary)" }}
           >
-            Tasks
+            My Tasks
           </h1>
           <p
             className="text-xs mt-1"
             style={{ color: "var(--text-muted)" }}
           >
             {tasks
-              ? `${tasks.length} task${tasks.length !== 1 ? "s" : ""} ${status || priority ? "matching filters" : "total"}`
+              ? `${tasks.length} task${tasks.length !== 1 ? "s" : ""} ${status || priority ? "matching filters" : "assigned to you"}`
               : "Loading…"}
           </p>
         </div>
 
-        {user?.role === "admin" && (
-          <Link to="/tasks/new">
-            <Button size="sm">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M6 1v10M1 6h10" strokeLinecap="round" />
-              </svg>
-              New Task
-            </Button>
-          </Link>
-        )}
+        <Link to="/tasks/new">
+          <Button size="sm">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 1v10M1 6h10" strokeLinecap="round" />
+            </svg>
+            New Task
+          </Button>
+        </Link>
       </div>
+
+      {/* Stats strip */}
+      {stats && stats.total > 0 && (
+        <div
+          className="rounded-sm p-4 space-y-3 animate-fade-slide"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+        >
+          {/* Stat chips */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: "Pending", value: stats.pending, color: "#f59e0b" },
+              { label: "In Progress", value: stats.in_progress, color: "#14b8a6" },
+              { label: "Completed", value: stats.completed, color: "#10b981" },
+              { label: "Overdue", value: stats.overdue, color: "#ef4444" },
+            ].map(({ label, value, color }) => (
+              <div
+                key={label}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-sm"
+                style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
+              >
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ background: color }}
+                />
+                <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                  {label}
+                </span>
+                <span className="text-xs font-mono font-semibold" style={{ color }}>
+                  {value}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Completion progress bar */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                Completion
+              </span>
+              <span className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
+                {stats.completed} of {stats.total} tasks · {completionPct}%
+              </span>
+            </div>
+            <div
+              className="h-1.5 rounded-full overflow-hidden"
+              style={{ background: "var(--surface-3)" }}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${completionPct}%`, background: "#10b981" }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div
