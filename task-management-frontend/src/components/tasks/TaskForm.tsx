@@ -116,6 +116,10 @@ export function TaskForm({
 
   const autoPriority = PRESET_LABELS.find((p) => p.key === duePreset)?.priority;
 
+  const assignModes: Array<"individual" | "group"> = groups.length > 0
+    ? ["individual", "group"]
+    : ["individual"];
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {/* Template picker — only shown when creator has matching job_title templates */}
@@ -171,11 +175,11 @@ export function TaskForm({
             Assign To
           </label>
           <div className="flex gap-2">
-            {(["individual", ...(groups.length > 0 ? ["group"] : [])] as const).map((mode) => (
+            {assignModes.map((mode) => (
               <button
                 key={mode}
                 type="button"
-                onClick={() => setValue("assign_mode", mode as "individual" | "group")}
+                onClick={() => setValue("assign_mode", mode)}
                 className="px-3 py-1.5 rounded-sm text-[11px] font-mono uppercase tracking-wide transition-all"
                 style={{
                   background: assignMode === mode ? "var(--accent)" : "var(--surface-2)",
