@@ -171,11 +171,11 @@ export function TaskForm({
             Assign To
           </label>
           <div className="flex gap-2">
-            {(["individual", "group"] as const).map((mode) => (
+            {(["individual", ...(groups.length > 0 ? ["group"] : [])] as const).map((mode) => (
               <button
                 key={mode}
                 type="button"
-                onClick={() => setValue("assign_mode", mode)}
+                onClick={() => setValue("assign_mode", mode as "individual" | "group")}
                 className="px-3 py-1.5 rounded-sm text-[11px] font-mono uppercase tracking-wide transition-all"
                 style={{
                   background: assignMode === mode ? "var(--accent)" : "var(--surface-2)",
