@@ -17,6 +17,7 @@ const variants = {
     "bg-violet-500/10 text-violet-400 border border-violet-500/25",
   employee:
     "bg-white/5 text-[var(--text-secondary)] border border-white/8",
+  terminated: "bg-red-500/10 text-red-400 border border-red-500/25",
 };
 
 const dots: Record<string, string> = {
@@ -28,6 +29,7 @@ const dots: Record<string, string> = {
   high: "bg-red-400",
   admin: "bg-violet-400",
   employee: "bg-gray-500",
+  terminated: "bg-red-400",
 };
 
 type BadgeVariant = keyof typeof variants;
