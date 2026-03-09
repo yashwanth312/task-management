@@ -2,7 +2,8 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -54,7 +55,7 @@ async def create_group(
         await db.execute(
             insert(group_members).values(
                 [{"group_id": group.id, "user_id": uid} for uid in body.member_ids]
-            ).prefix_with("ON CONFLICT DO NOTHING")
+            ).on_conflict_do_nothing()
         )
 
     await db.commit()
@@ -110,7 +111,7 @@ async def replace_group_members(
         await db.execute(
             insert(group_members).values(
                 [{"group_id": group_id, "user_id": uid} for uid in body.member_ids]
-            ).prefix_with("ON CONFLICT DO NOTHING")
+            ).on_conflict_do_nothing()
         )
     await db.commit()
     return await _get_group_or_404(group_id, db)

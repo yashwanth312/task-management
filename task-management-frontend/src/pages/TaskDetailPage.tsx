@@ -123,19 +123,21 @@ export function TaskDetailPage() {
               </div>
             </div>
 
-            {user?.role === "admin" && (
+            {(user?.role === "admin" || task.created_by === user?.id) && (
               <div className="flex gap-2 flex-shrink-0">
                 <Link to={`/tasks/${task.id}/edit`}>
                   <Button variant="secondary" size="sm">Edit</Button>
                 </Link>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={handleDelete}
-                  disabled={deleteTask.isPending}
-                >
-                  Delete
-                </Button>
+                {user?.role === "admin" && (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={handleDelete}
+                    disabled={deleteTask.isPending}
+                  >
+                    Delete
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -221,7 +223,7 @@ export function TaskDetailPage() {
       </div>
 
       {/* Group batch overview */}
-      {task.task_batch_id && batchMembers.length > 0 && (user?.role === "admin" || batchMembers.some((m) => m.assignee?.id === user?.id)) && (
+      {task.task_batch_id && batchMembers.length > 0 && (user?.role === "admin" || task.created_by === user?.id || batchMembers.some((m) => m.assignee?.id === user?.id)) && (
         <div
           className="rounded-sm overflow-hidden animate-fade-slide"
           style={{ border: "1px solid var(--border)", background: "var(--surface)" }}

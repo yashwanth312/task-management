@@ -39,7 +39,9 @@ async def list_tasks(
 ) -> list[Task]:
     query = select(Task).options(*TASK_OPTIONS)
     if current_user.role != "admin":
-        query = query.where(Task.assigned_to == current_user.id)
+        query = query.where(
+            (Task.assigned_to == current_user.id) | (Task.created_by == current_user.id)
+        )
     if status_filter:
         query = query.where(Task.status == status_filter)
     if priority:
@@ -182,7 +184,7 @@ async def get_task(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Task:
     task = await _get_task_or_404(task_id, db)
-    if current_user.role != "admin" and task.assigned_to != current_user.id:
+    if current_user.role != "admin" and task.assigned_to != current_user.id and task.created_by != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     return task
 
@@ -192,10 +194,12 @@ async def update_task(
     task_id: uuid.UUID,
     body: TaskUpdate,
     background_tasks: BackgroundTasks,
-    _: Annotated[User, Depends(require_admin)],
+    current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Task:
     task = await _get_task_or_404(task_id, db)
+    if current_user.role != "admin" and task.created_by != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     old_assignee_id = task.assigned_to
 
     # Validate new assignee if changing

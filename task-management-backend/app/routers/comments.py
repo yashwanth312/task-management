@@ -21,7 +21,7 @@ async def _check_task_access(task_id: uuid.UUID, current_user: User, db: AsyncSe
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-    if current_user.role != "admin" and task.assigned_to != current_user.id:
+    if current_user.role != "admin" and task.assigned_to != current_user.id and task.created_by != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     return task
 

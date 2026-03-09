@@ -9,8 +9,9 @@ const priorityAccent: Record<string, string> = {
   low: "#4e4e62",
 };
 
-export function TaskCard({ task }: { task: Task }) {
+export function TaskCard({ task, currentUserId, batchCount }: { task: Task; currentUserId?: string; batchCount?: number }) {
   const statusLabel = task.status.replace("_", " ");
+  const isCreatedByMe = currentUserId && task.created_by === currentUserId && task.assigned_to !== currentUserId;
   const isOverdue =
     task.due_date &&
     task.status !== "completed" &&
@@ -63,7 +64,31 @@ export function TaskCard({ task }: { task: Task }) {
           >
             <Badge variant={task.priority}>{task.priority}</Badge>
 
-            {task.assignee && (
+            {isCreatedByMe && (
+              <span
+                className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm"
+                style={{
+                  background: "rgba(245,158,11,0.1)",
+                  color: "var(--accent)",
+                  border: "1px solid rgba(245,158,11,0.2)",
+                }}
+              >
+                created
+              </span>
+            )}
+
+            {batchCount != null ? (
+              <span
+                className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm"
+                style={{
+                  background: "rgba(20,184,166,0.1)",
+                  color: "#14b8a6",
+                  border: "1px solid rgba(20,184,166,0.2)",
+                }}
+              >
+                Group · {batchCount} members
+              </span>
+            ) : task.assignee && (
               <span
                 className="text-[10px] font-mono truncate max-w-[120px]"
                 style={{ color: "var(--text-muted)" }}
