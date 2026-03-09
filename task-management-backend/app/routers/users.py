@@ -62,7 +62,7 @@ async def update_user(
             status_code=status.HTTP_409_CONFLICT,
             detail="Terminated users cannot be reactivated",
         )
-    for field, value in body.model_dump(exclude_none=True).items():
+    for field, value in body.model_dump(exclude_unset=True).items():
         setattr(user, field, value)
     await db.commit()
     await db.refresh(user)

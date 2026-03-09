@@ -23,5 +23,5 @@ export interface UserUpdate {
   full_name?: string;
   role?: UserRole;
   is_active?: boolean;
-  job_title?: string;
+  job_title?: string | null;
 }

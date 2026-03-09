@@ -56,7 +56,7 @@ function EditModal({
       id: user.id,
       data: {
         full_name: data.full_name,
-        job_title: data.job_title || undefined,
+        job_title: data.job_title?.trim() || null,
         role: data.role as UserRole,
       },
     });
@@ -141,7 +141,10 @@ export function UsersPage() {
   };
 
   const handleTerminate = (id: string) => {
-    terminateUser.mutate(id, { onSuccess: () => setConfirmTerminateId(null) });
+    terminateUser.mutate(id, {
+      onSuccess: () => setConfirmTerminateId(null),
+      onError: () => setConfirmTerminateId(null),
+    });
   };
 
   return (
