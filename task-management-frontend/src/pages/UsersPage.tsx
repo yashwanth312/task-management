@@ -170,7 +170,7 @@ export function UsersPage() {
         </div>
         <div className="flex items-center gap-2">
           {terminatedCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={() => setShowTerminated((v) => !v)}>
+            <Button variant="secondary" size="sm" onClick={() => setShowTerminated((v) => !v)}>
               {showTerminated ? "Hide terminated" : "Show terminated"}
             </Button>
           )}
@@ -213,7 +213,7 @@ export function UsersPage() {
                   <tr
                     key={u.id}
                     className={`animate-fade-slide stagger-${Math.min(i + 1, 5)}`}
-                    style={{ opacity: isTerminated ? 0.5 : 1 }}
+                    style={isTerminated ? { borderLeft: "2px solid rgba(185,28,28,0.5)" } : undefined}
                   >
                     {/* Name */}
                     <td>
@@ -242,7 +242,13 @@ export function UsersPage() {
                         >
                           {u.full_name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                        <span
+                          className="text-xs font-medium"
+                          style={{
+                            color: isTerminated ? "var(--text-muted)" : "var(--text-primary)",
+                            textDecoration: isTerminated ? "line-through" : "none",
+                          }}
+                        >
                           {u.full_name}
                         </span>
                       </div>
