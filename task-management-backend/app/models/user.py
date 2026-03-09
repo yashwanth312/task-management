@@ -18,6 +18,7 @@ class User(Base):
     role: Mapped[str] = mapped_column(SAEnum("admin", "employee", name="user_role"), nullable=False, default="employee")
     job_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    terminated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     tasks_created: Mapped[list["Task"]] = relationship("Task", foreign_keys="Task.created_by", back_populates="creator")
