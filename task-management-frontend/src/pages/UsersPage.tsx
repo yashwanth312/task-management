@@ -114,8 +114,11 @@ export function UsersPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [confirmTerminateId, setConfirmTerminateId] = useState<string | null>(null);
+  const [showTerminated, setShowTerminated] = useState(false);
 
   const { data: users = [], isLoading } = useUsers();
+  const visibleUsers = showTerminated ? users : users.filter((u) => !u.terminated_at);
+  const terminatedCount = users.filter((u) => !!u.terminated_at).length;
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const terminateUser = useTerminateUser();
@@ -159,15 +162,25 @@ export function UsersPage() {
             Users
           </h1>
           <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-            {users.length} team member{users.length !== 1 ? "s" : ""}
+            {visibleUsers.length} team member{visibleUsers.length !== 1 ? "s" : ""}
+            {terminatedCount > 0 && !showTerminated && (
+              <span> · {terminatedCount} terminated</span>
+            )}
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          {terminatedCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => setShowTerminated((v) => !v)}>
+              {showTerminated ? "Hide terminated" : "Show terminated"}
+            </Button>
+          )}
         <Button size="sm" onClick={() => setAddOpen(true)}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M6 1v10M1 6h10" strokeLinecap="round" />
           </svg>
           Add Employee
         </Button>
+        </div>
       </div>
 
       {/* Loading skeletons */}
@@ -194,7 +207,7 @@ export function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u, i) => {
+              {visibleUsers.map((u, i) => {
                 const isTerminated = !!u.terminated_at;
                 return (
                   <tr

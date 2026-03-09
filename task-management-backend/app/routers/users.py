@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies.auth import require_admin, get_current_user
 from app.models.user import User
+from app.models.task import Task
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
 from app.services.auth_service import hash_password
 
@@ -88,6 +89,14 @@ async def terminate_user(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="User is already terminated",
+        )
+    incomplete = await db.execute(
+        select(Task).where(Task.assigned_to == user_id, Task.status != "completed")
+    )
+    if incomplete.scalars().first() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot terminate: user has incomplete tasks",
         )
     user.terminated_at = datetime.now(timezone.utc)
     await db.commit()
