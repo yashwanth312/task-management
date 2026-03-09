@@ -114,6 +114,7 @@ export function UsersPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [confirmTerminateId, setConfirmTerminateId] = useState<string | null>(null);
+  const [terminateError, setTerminateError] = useState<string | null>(null);
   const [showTerminated, setShowTerminated] = useState(false);
 
   const { data: users = [], isLoading } = useUsers();
@@ -144,9 +145,16 @@ export function UsersPage() {
   };
 
   const handleTerminate = (id: string) => {
+    setTerminateError(null);
     terminateUser.mutate(id, {
-      onSuccess: () => setConfirmTerminateId(null),
-      onError: () => setConfirmTerminateId(null),
+      onSuccess: () => {
+        setConfirmTerminateId(null);
+        setTerminateError(null);
+      },
+      onError: (err: unknown) => {
+        const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+        setTerminateError(detail ?? "Termination failed");
+      },
     });
   };
 
@@ -305,26 +313,33 @@ export function UsersPage() {
                           —
                         </span>
                       ) : confirmTerminateId === u.id ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
-                            Confirm terminate?
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleTerminate(u.id)}
-                            disabled={terminateUser.isPending}
-                            style={{ color: "rgb(248,113,113)" }}
-                          >
-                            Yes
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setConfirmTerminateId(null)}
-                          >
-                            No
-                          </Button>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
+                              Confirm terminate?
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleTerminate(u.id)}
+                              disabled={terminateUser.isPending}
+                              style={{ color: "rgb(248,113,113)" }}
+                            >
+                              Yes
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => { setConfirmTerminateId(null); setTerminateError(null); }}
+                            >
+                              No
+                            </Button>
+                          </div>
+                          {terminateError && (
+                            <span className="text-[10px] font-mono" style={{ color: "rgb(248,113,113)" }}>
+                              {terminateError}
+                            </span>
+                          )}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
