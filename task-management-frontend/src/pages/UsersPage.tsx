@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useUsers, useCreateUser, useUpdateUser } from "@/hooks/useUsers";
+import { useUsers, useCreateUser, useUpdateUser, useTerminateUser } from "@/hooks/useUsers";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -9,42 +9,139 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { UserRole } from "@/types/user";
+import { User, UserRole } from "@/types/user";
 
-const schema = z.object({
+// ── Add Employee form ──────────────────────────────────────────────────
+const addSchema = z.object({
   full_name: z.string().min(1, "Name required"),
   email: z.string().email("Invalid email"),
   role: z.enum(["admin", "employee"]),
   password: z.string().min(6, "Min 6 characters"),
   job_title: z.string().optional(),
 });
+type AddFormValues = z.infer<typeof addSchema>;
 
-type FormValues = z.infer<typeof schema>;
+// ── Edit Employee form ─────────────────────────────────────────────────
+const editSchema = z.object({
+  full_name: z.string().min(1, "Name required"),
+  job_title: z.string().optional(),
+  role: z.enum(["admin", "employee"]),
+});
+type EditFormValues = z.infer<typeof editSchema>;
 
+// ── Edit modal sub-component ───────────────────────────────────────────
+function EditModal({
+  user,
+  onClose,
+}: {
+  user: User;
+  onClose: () => void;
+}) {
+  const updateUser = useUpdateUser();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<EditFormValues>({
+    resolver: zodResolver(editSchema),
+    defaultValues: {
+      full_name: user.full_name,
+      job_title: user.job_title ?? "",
+      role: user.role,
+    },
+  });
+
+  const onSubmit = async (data: EditFormValues) => {
+    await updateUser.mutateAsync({
+      id: user.id,
+      data: {
+        full_name: data.full_name,
+        job_title: data.job_title || undefined,
+        role: data.role as UserRole,
+      },
+    });
+    onClose();
+  };
+
+  return (
+    <Modal open onClose={onClose} title="Edit Employee">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Input
+          label="Full Name"
+          placeholder="Jane Smith"
+          {...register("full_name")}
+          error={errors.full_name?.message}
+        />
+        {/* Email shown as read-only context */}
+        <div className="space-y-1.5">
+          <label
+            className="block text-[10px] font-mono font-medium uppercase tracking-widest"
+            style={{ color: "var(--text-muted)" }}
+          >
+            Email (read-only)
+          </label>
+          <p
+            className="text-xs font-mono px-3 py-2.5 rounded-sm"
+            style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+          >
+            {user.email}
+          </p>
+        </div>
+        <Input
+          label="Job Title (optional)"
+          placeholder="e.g. ERP Consultant"
+          {...register("job_title")}
+        />
+        <Select label="Role" {...register("role")} error={errors.role?.message}>
+          <option value="employee">Employee</option>
+          <option value="admin">Admin</option>
+        </Select>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="secondary" type="button" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving…" : "Save Changes"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// ── Main page ──────────────────────────────────────────────────────────
 export function UsersPage() {
-  const [open, setOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [confirmTerminateId, setConfirmTerminateId] = useState<string | null>(null);
+
   const { data: users = [], isLoading } = useUsers();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
+  const terminateUser = useTerminateUser();
 
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  } = useForm<AddFormValues>({
+    resolver: zodResolver(addSchema),
     defaultValues: { role: "employee" },
   });
 
-  const onSubmit = async (data: FormValues) => {
+  const onAdd = async (data: AddFormValues) => {
     await createUser.mutateAsync(data);
     reset();
-    setOpen(false);
+    setAddOpen(false);
   };
 
   const toggleActive = (id: string, is_active: boolean) => {
     updateUser.mutate({ id, data: { is_active: !is_active } });
+  };
+
+  const handleTerminate = (id: string) => {
+    terminateUser.mutate(id, { onSuccess: () => setConfirmTerminateId(null) });
   };
 
   return (
@@ -58,14 +155,11 @@ export function UsersPage() {
           >
             Users
           </h1>
-          <p
-            className="text-xs mt-1"
-            style={{ color: "var(--text-muted)" }}
-          >
+          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
             {users.length} team member{users.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Button size="sm" onClick={() => setOpen(true)}>
+        <Button size="sm" onClick={() => setAddOpen(true)}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M6 1v10M1 6h10" strokeLinecap="round" />
           </svg>
@@ -73,6 +167,7 @@ export function UsersPage() {
         </Button>
       </div>
 
+      {/* Loading skeletons */}
       {isLoading && (
         <div className="space-y-1">
           {[1, 2, 3, 4].map((i) => (
@@ -81,6 +176,7 @@ export function UsersPage() {
         </div>
       )}
 
+      {/* Table */}
       {!isLoading && (
         <div
           className="rounded-sm overflow-hidden animate-fade-slide stagger-1"
@@ -95,81 +191,163 @@ export function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u, i) => (
-                <tr key={u.id} className={`animate-fade-slide stagger-${Math.min(i + 1, 5)}`}>
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-7 h-7 rounded-sm flex items-center justify-center text-xs font-mono font-semibold flex-shrink-0"
-                        style={{
-                          background: u.is_active ? "var(--accent-muted)" : "var(--surface-3)",
-                          color: u.is_active ? "var(--accent)" : "var(--text-muted)",
-                          border: `1px solid ${u.is_active ? "var(--accent-border)" : "var(--border)"}`,
-                        }}
-                      >
-                        {u.full_name.charAt(0).toUpperCase()}
+              {users.map((u, i) => {
+                const isTerminated = !!u.terminated_at;
+                return (
+                  <tr
+                    key={u.id}
+                    className={`animate-fade-slide stagger-${Math.min(i + 1, 5)}`}
+                    style={{ opacity: isTerminated ? 0.5 : 1 }}
+                  >
+                    {/* Name */}
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-7 h-7 rounded-sm flex items-center justify-center text-xs font-mono font-semibold flex-shrink-0"
+                          style={{
+                            background: isTerminated
+                              ? "rgba(239,68,68,0.1)"
+                              : u.is_active
+                              ? "var(--accent-muted)"
+                              : "var(--surface-3)",
+                            color: isTerminated
+                              ? "rgb(248,113,113)"
+                              : u.is_active
+                              ? "var(--accent)"
+                              : "var(--text-muted)",
+                            border: `1px solid ${
+                              isTerminated
+                                ? "rgba(239,68,68,0.25)"
+                                : u.is_active
+                                ? "var(--accent-border)"
+                                : "var(--border)"
+                            }`,
+                          }}
+                        >
+                          {u.full_name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>
+                          {u.full_name}
+                        </span>
                       </div>
-                      <span
-                        className="text-xs font-medium"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        {u.full_name}
+                    </td>
+
+                    {/* Job Title */}
+                    <td>
+                      <span className="font-mono text-[10px]" style={{ color: "var(--text-muted)" }}>
+                        {u.job_title ?? "—"}
                       </span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="font-mono text-[10px]" style={{ color: "var(--text-muted)" }}>
-                      {u.job_title ?? "—"}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="font-mono text-[11px]">{u.email}</span>
-                  </td>
-                  <td>
-                    <Badge variant={u.role as UserRole}>{u.role}</Badge>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-1.5">
-                      <div
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{
-                          background: u.is_active ? "#10b981" : "var(--text-muted)",
-                        }}
-                      />
-                      <span
-                        className="text-[10px] font-mono uppercase tracking-wide"
-                        style={{
-                          color: u.is_active ? "#10b981" : "var(--text-muted)",
-                        }}
-                      >
-                        {u.is_active ? "Active" : "Inactive"}
+                    </td>
+
+                    {/* Email */}
+                    <td>
+                      <span className="font-mono text-[11px]">{u.email}</span>
+                    </td>
+
+                    {/* Role */}
+                    <td>
+                      <Badge variant={u.role as UserRole}>{u.role}</Badge>
+                    </td>
+
+                    {/* Status */}
+                    <td>
+                      {isTerminated ? (
+                        <Badge variant="terminated">Terminated</Badge>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ background: u.is_active ? "#10b981" : "var(--text-muted)" }}
+                          />
+                          <span
+                            className="text-[10px] font-mono uppercase tracking-wide"
+                            style={{ color: u.is_active ? "#10b981" : "var(--text-muted)" }}
+                          >
+                            {u.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Joined */}
+                    <td>
+                      <span className="font-mono text-[10px]">
+                        {format(new Date(u.created_at), "MMM d, yyyy")}
                       </span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="font-mono text-[10px]">
-                      {format(new Date(u.created_at), "MMM d, yyyy")}
-                    </span>
-                  </td>
-                  <td>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleActive(u.id, u.is_active)}
-                      disabled={updateUser.isPending}
-                    >
-                      {u.is_active ? "Deactivate" : "Activate"}
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+
+                    {/* Actions */}
+                    <td>
+                      {isTerminated ? (
+                        <span className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
+                          —
+                        </span>
+                      ) : confirmTerminateId === u.id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
+                            Confirm terminate?
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleTerminate(u.id)}
+                            disabled={terminateUser.isPending}
+                            style={{ color: "rgb(248,113,113)" }}
+                          >
+                            Yes
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setConfirmTerminateId(null)}
+                          >
+                            No
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          {/* Edit */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditUser(u)}
+                          >
+                            Edit
+                          </Button>
+                          {/* Deactivate / Activate */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleActive(u.id, u.is_active)}
+                            disabled={updateUser.isPending}
+                          >
+                            {u.is_active ? "Deactivate" : "Activate"}
+                          </Button>
+                          {/* Terminate — only shown when inactive and not terminated */}
+                          {!u.is_active && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setConfirmTerminateId(u.id)}
+                              style={{ color: "rgb(248,113,113)" }}
+                            >
+                              Terminate
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Add Employee">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {/* Add Employee modal */}
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add Employee">
+        <form onSubmit={handleSubmit(onAdd)} className="space-y-4">
           <Input
             label="Full Name"
             placeholder="Jane Smith"
@@ -200,11 +378,7 @@ export function UsersPage() {
             error={errors.password?.message}
           />
           <div className="flex justify-end gap-2 pt-2">
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={() => setOpen(false)}
-            >
+            <Button variant="secondary" type="button" onClick={() => setAddOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
@@ -213,6 +387,9 @@ export function UsersPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Edit Employee modal */}
+      {editUser && <EditModal user={editUser} onClose={() => setEditUser(null)} />}
     </div>
   );
 }
