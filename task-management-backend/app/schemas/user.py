@@ -26,6 +26,7 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     id: uuid.UUID
     is_active: bool
+    terminated_at: datetime | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

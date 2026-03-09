@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -56,8 +57,39 @@ async def update_user(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.terminated_at is not None and body.is_active is True:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Terminated users cannot be reactivated",
+        )
     for field, value in body.model_dump(exclude_none=True).items():
         setattr(user, field, value)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+@router.post("/{user_id}/terminate", response_model=UserResponse)
+async def terminate_user(
+    user_id: uuid.UUID,
+    _: Annotated[User, Depends(require_admin)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> User:
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Deactivate the user before terminating",
+        )
+    if user.terminated_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="User is already terminated",
+        )
+    user.terminated_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(user)
     return user
