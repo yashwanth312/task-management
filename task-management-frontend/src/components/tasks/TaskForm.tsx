@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { getTemplatesForJobTitle } from "@/config/taskTemplates";
+import { getTemplatesForPair } from "@/config/taskTemplates";
 
 const schema = z.object({
   title: z.string().min(1, "Title required"),
@@ -88,6 +88,7 @@ export function TaskForm({
   const duePreset = watch("due_preset");
   const assignMode = watch("assign_mode");
   const templateId = watch("template_id");
+  const assignedTo = watch("assigned_to");
 
   // Auto-set priority and due_date from preset
   useEffect(() => {
@@ -101,8 +102,21 @@ export function TaskForm({
     }
   }, [duePreset, setValue]);
 
-  // Templates are based on the creator's own job_title
-  const templates = useMemo(() => getTemplatesForJobTitle(creatorJobTitle), [creatorJobTitle]);
+  const assigneeJobTitle = useMemo(
+    () => employees.find((u) => u.id === assignedTo)?.job_title ?? null,
+    [assignedTo, employees]
+  );
+
+  // Templates are based on the creator+assignee job_title pair
+  const templates = useMemo(
+    () => getTemplatesForPair(creatorJobTitle, assigneeJobTitle),
+    [creatorJobTitle, assigneeJobTitle]
+  );
+
+  // Reset template when assignee changes
+  useEffect(() => {
+    setValue("template_id", "custom");
+  }, [assignedTo, setValue]);
 
   // Pre-fill title/description when template changes
   useEffect(() => {
