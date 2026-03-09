@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listUsers, createUser, updateUser } from "@/api/users";
+import { listUsers, createUser, updateUser, terminateUser } from "@/api/users";
 import { UserCreate, UserUpdate } from "@/types/user";
 
 export const USERS_KEY = ["users"] as const;
@@ -23,6 +23,14 @@ export function useUpdateUser() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UserUpdate }) => updateUser(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: USERS_KEY }),
+  });
+}
+
+export function useTerminateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => terminateUser(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: USERS_KEY }),
   });
 }

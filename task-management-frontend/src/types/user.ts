@@ -7,6 +7,7 @@ export interface User {
   role: UserRole;
   job_title: string | null;
   is_active: boolean;
+  terminated_at: string | null;
   created_at: string;
 }
 
