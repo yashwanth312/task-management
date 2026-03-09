@@ -59,7 +59,7 @@ async def update_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if user.terminated_at is not None and body.is_active is True:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Terminated users cannot be reactivated",
         )
     for field, value in body.model_dump(exclude_none=True).items():
@@ -81,12 +81,12 @@ async def terminate_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Deactivate the user before terminating",
         )
     if user.terminated_at is not None:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_409_CONFLICT,
             detail="User is already terminated",
         )
     user.terminated_at = datetime.now(timezone.utc)
